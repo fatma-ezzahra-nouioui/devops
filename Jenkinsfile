@@ -12,13 +12,6 @@ pipeline {
                 sh 'mvn compile'  
             }
         }
-        stage ('Code Quality'){
-            steps {
-                    withSonarQubeEnv('SonarQubeServer') {
-                sh 'mvn sonar:sonar'
-                }
-             }
-        }
         stage('MOCKITO') {
                     steps {
                         sh 'mvn test'
@@ -28,7 +21,14 @@ pipeline {
                             junit '**/target/surefire-reports/TEST-*.xml'
                         }
                     }
+         }
+                stage ('Code Quality'){
+            steps {
+                    withSonarQubeEnv('SonarQubeServer') {
+                sh 'mvn sonar:sonar'
                 }
+             }
+        }
     
     }
 }
