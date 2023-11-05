@@ -3,41 +3,57 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh 'mvn clean'
+                script {
+                    sh 'mvn clean'
+                }
             }
-            
-        } 
+        }
         stage('Compile') {
             steps {
-                sh 'mvn compile'  
+                script {
+                    sh 'mvn compile'
+                }
             }
         }
-       stage('MOCKITO') {
-    steps {
-        sh 'mvn clean test jacoco:report'
-    }
-    post {
-        always {
-            junit '**/target/surefire-reports/TEST-*.xml'
-            publishHTML(target: [
-                allowMissing: false,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'target/site/jacoco',
-                reportFiles: 'index.html',
-                reportName: 'JaCoCo Code Coverage'
-            ])
-        }
-    }
-}
-
-                stage ('Code Quality'){
+        stage('JaCoCo Code Coverage') {
             steps {
-                    withSonarQubeEnv('SonarQubeServer') {
-                sh 'mvn sonar:sonar'
+                script {
+                    sh 'mvn clean test org.jacoco:jacoco-maven-plugin:prepare-agent'
                 }
-             }
+            }
         }
-    
+        stage('Code Quality') {
+            steps {
+                script {
+                    withSonarQubeEnv('SonarQubeServer') {
+                        sh 'mvn sonar:sonar'
+                    }
+                }
+            }
+        }
+        stage('MOCKITO') {
+            steps {
+                script {
+                    sh 'mvn test'
+                }
+            }
+            post {
+                always {
+                    junit '**/target/surefire-reports/TEST-*.xml'
+                }
+            }
+        }
+        stage('Artifact construction') {
+            steps {
+                script {
+                    sh 'mvn package'
+                }
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: 'target/*.jar', allowEmptyArchive: true
+                }
+            }
+        }
     }
 }
